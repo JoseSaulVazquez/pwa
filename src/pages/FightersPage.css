@@ -1,0 +1,123 @@
+.fighter-container {
+  text-align: center;
+  color: #fff;
+  padding: 40px 10px;
+  background: linear-gradient(180deg, #000 0%, #111 100%);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* PANEL DERECHA - SOLO PARA PC */
+.fighter-bg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 48%;
+  height: 120%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.2;
+  pointer-events: none;
+  display: none;
+}
+
+.back-link {
+  color: #ff4040;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.fighter-name {
+  font-size: 2.5rem;
+  color: #ff3c3c;
+  text-shadow: 2px 2px 15px rgba(255, 0, 0, 0.4);
+  margin: 20px 0;
+}
+
+.fighter-img {
+  width: 280px;
+  height: auto;
+  border-radius: 10px;
+  border: 2px solid #ff3c3c;
+  box-shadow: 0 0 20px rgba(229, 9, 20, 0.4);
+  transition: transform 0.3s;
+}
+
+.fighter-img:hover {
+  transform: scale(1.05);
+}
+
+.bio {
+  max-width: 600px;
+  margin: 20px auto;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #ddd;
+}
+
+.achievements {
+  list-style: none;
+  padding: 0;
+  margin: 20px auto;
+  max-width: 400px;
+  font-size: 1.05rem;
+}
+
+.achievements li {
+  background: rgba(255, 60, 60, 0.1);
+  border: 1px solid #ff3c3c;
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.subscribe-btn {
+  background: linear-gradient(90deg, #ff3c3c, #b30000);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.subscribe-btn:hover {
+  background: linear-gradient(90deg, #ff5555, #cc0000);
+  transform: scale(1.05);
+}
+
+.fighter-wrapper {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* RESPONSIVE */
+@media (min-width: 900px) {
+  .fighter-bg {
+    display: block;
+  }
+}
+
+@media (max-width: 600px) {
+  .fighter-name {
+    font-size: 1.8rem;
+  }
+
+  .fighter-img {
+    width: 220px;
+  }
+
+  .bio {
+    font-size: 1rem;
+  }
+}

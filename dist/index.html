@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React</title>
+
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#ffffff" />
+
+    <!-- Splash screen e íconos para iOS -->
+    <link rel="apple-touch-icon" href="/icons/icon-128x128.ico" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- Registro del Service Worker -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((reg) => console.log("✅ Service Worker registrado:", reg.scope))
+            .catch((err) => console.error("❌ Error al registrar SW:", err));
+        });
+      }
+    </script>
+    <script type="module" crossorigin src="/assets/index-8XeYdbg2.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CLtOlqaL.css">
+  </head>
+
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

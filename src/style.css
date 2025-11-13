@@ -1,0 +1,109 @@
+/* Reset básico */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Fondo general */
+body {
+  background-color: #f2f4f8;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Contenedor principal */
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+/* Tarjeta */
+.card {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  width: 100%;
+  max-width: 360px; /* límite para pantallas grandes */
+}
+
+/* Título */
+.card h1 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+/* Botones */
+.buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 1.5rem 0;
+  flex-wrap: wrap; /* permite que los botones bajen en pantallas pequeñas */
+}
+
+button {
+  padding: 0.8rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.3s;
+  width: 100%;
+  max-width: 140px; /* no se alargan mucho */
+}
+
+/* Botón enviar */
+button.send {
+  background-color: #007bff;
+  color: white;
+}
+button.send:hover {
+  background-color: #0056b3;
+}
+
+/* Botón +1 */
+button.plus {
+  background-color: #28a745;
+  color: white;
+}
+button.plus:hover {
+  background-color: #1e7e34;
+}
+
+/* Texto pequeño */
+small {
+  color: #666;
+  font-size: 0.85rem;
+  display: block;
+}
+
+/* 📱 Responsividad */
+@media (max-width: 480px) {
+  .card {
+    padding: 1.5rem;
+    width: 90%;
+  }
+
+  .card h1 {
+    font-size: 1.3rem;
+  }
+
+  button {
+    font-size: 0.9rem;
+    max-width: 120px;
+  }
+
+  small {
+    font-size: 0.8rem;
+  }
+}
