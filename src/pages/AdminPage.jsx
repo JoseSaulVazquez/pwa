@@ -40,7 +40,7 @@ export default function AdminPage() {
     }
 
     try {
-      const response = await fetch(`http://10.211.114.54:4000/api/send-push/${encodeURIComponent(selected)}`, {
+      const response = await fetch(`https://apispwa.onrender.com/api/send-push/${encodeURIComponent(selected)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, body }),

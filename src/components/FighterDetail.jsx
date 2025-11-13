@@ -27,7 +27,7 @@ export default function FighterDetail() {
       });
 
       // Envia la suscripcion + favorito al servidor
-      await fetch("http://10.211.114.54:4000/api/subscribe-fighter", {
+      await fetch("https://apispwa.onrender.com/api/subscribe-fighter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subscription, fighterId: fighter.id })

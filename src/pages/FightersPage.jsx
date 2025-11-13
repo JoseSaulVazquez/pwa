@@ -58,7 +58,7 @@ const saveFavorite = () => {
       applicationServerKey: "BIFfnwJktLiHzU4hsToHUkjNoPia0L4XuEcIyt3m3PeTHxo9oCSKdgNSWeIP2RS37p5ulxnP0Twzt86hLt8PQuQ"
     });
 
-    await fetch("http://10.211.114.54:4000/api/subscribe", {
+    await fetch("https://apispwa.onrender.com/api/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ subscription, luchador: fighter.name }),
@@ -73,7 +73,7 @@ const saveFavorite = () => {
     const sub = await sw.pushManager.getSubscription();
     if (!sub) return alert("No estás suscrito");
 
-    await fetch("http://10.211.114.54:4000/api/unsubscribe", {
+    await fetch("https://apispwa.onrender.com/api/unsubscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ endpoint: sub.endpoint }),
