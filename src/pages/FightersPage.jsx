@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import fighters from "../data/fighters";
+import { useEffect } from "react";
 import "./FightersPage.css";
 
 export default function FighterPage() {
@@ -8,54 +9,46 @@ export default function FighterPage() {
 
   if (!fighter) return <p style={{ color: "white" }}>Luchador no encontrado.</p>;
 
- // INDEXEDDB FAVORITOS
-const saveFavorite = () => {
-  const request = indexedDB.open("database", 2);
+  // ✅ Inicializar IndexedDB con stores necesarios
+  useEffect(() => {
+    const request = indexedDB.open("database", 3);
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
 
-  request.onupgradeneeded = (event) => {
-    const db = event.target.result;
-  
-    if (!db.objectStoreNames.contains("favorites")) {
-      db.createObjectStore("favorites", { keyPath: "id" });
-      console.log("Object store 'favorites' creado ✅");
-    }
-  };
+      if (!db.objectStoreNames.contains("favorites")) {
+        db.createObjectStore("favorites", { keyPath: "id" });
+      }
 
-  request.onsuccess = (event) => {
-    const db = event.target.result;
-    if (!db.objectStoreNames.contains("favorites")) {
-      alert("❌ Error: la base de datos no tiene el store 'favorites'");
-      return;
-    }
-
-    const tx = db.transaction("favorites", "readwrite");
-    const store = tx.objectStore("favorites");
-
-    store.put({ id: fighter.id, name: fighter.name });
-
-    tx.oncomplete = () => {
-      alert(`⭐ ${fighter.name} agregado a favoritos`);
+      if (!db.objectStoreNames.contains("comments")) {
+        db.createObjectStore("comments", { autoIncrement: true });
+      }
     };
+  }, []);
 
-    tx.onerror = (e) => {
-      console.error("Error en la transacción IndexedDB:", e);
+  // ⭐ Guardar en favoritos
+  const saveFavorite = () => {
+    const request = indexedDB.open("database", 3);
+
+    request.onsuccess = (event) => {
+      const db = event.target.result;
+      const tx = db.transaction("favorites", "readwrite");
+      const store = tx.objectStore("favorites");
+
+      store.put({ id: fighter.id, name: fighter.name });
+
+      tx.oncomplete = () => {
+        alert(`⭐ ${fighter.name} agregado a favoritos`);
+      };
     };
   };
 
-  request.onerror = (e) => {
-    console.error("Error al abrir IndexedDB:", e);
-  };
-};
-
-
-
-  // SUSCRIBIRSE A PUSH
+  // 🔔 SUSCRIBIRSE A PUSH
   const subscribeToFighter = async () => {
     const sw = await navigator.serviceWorker.ready;
-
     const subscription = await sw.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: "BIFfnwJktLiHzU4hsToHUkjNoPia0L4XuEcIyt3m3PeTHxo9oCSKdgNSWeIP2RS37p5ulxnP0Twzt86hLt8PQuQ"
+      applicationServerKey:
+        "BIFfnwJktLiHzU4hsToHUkjNoPia0L4XuEcIyt3m3PeTHxo9oCSKdgNSWeIP2RS37p5ulxnP0Twzt86hLt8PQuQ",
     });
 
     await fetch("https://apispwa.onrender.com/api/subscribe", {
@@ -67,7 +60,7 @@ const saveFavorite = () => {
     alert(`🔔 Te suscribiste a ${fighter.name}`);
   };
 
-  // CANCELAR SUSCRIPCIÓN 
+  // 🔕 CANCELAR SUSCRIPCIÓN
   const unsubscribe = async () => {
     const sw = await navigator.serviceWorker.ready;
     const sub = await sw.pushManager.getSubscription();
@@ -83,45 +76,136 @@ const saveFavorite = () => {
     alert(`🔕 Cancelaste suscripción a ${fighter.name}`);
   };
 
+  // 💬 Cargar comentarios existentes (de Mongo y IndexedDB)
+  async function loadComments() {
+    const list = document.getElementById("comment-list");
+    list.innerHTML = "";
+
+    // Mostrar los del servidor
+    if (navigator.onLine) {
+      const res = await fetch(
+        `https://apispwa.onrender.com/api/comments/${fighter.id}`
+      );
+      const data = await res.json();
+      data.forEach((c) => {
+        const li = document.createElement("li");
+        li.textContent = `${c.name}: ${c.comment}`;
+        list.appendChild(li);
+      });
+    }
+
+    // Mostrar los offline guardados
+    const dbReq = indexedDB.open("database", 3);
+    dbReq.onsuccess = (event) => {
+      const db = event.target.result;
+      const tx = db.transaction("comments", "readonly");
+      const store = tx.objectStore("comments");
+      const getAll = store.getAll();
+      getAll.onsuccess = () => {
+        getAll.result
+          .filter((c) => c.fighterId === fighter.id)
+          .forEach((c) => {
+            const li = document.createElement("li");
+            li.textContent = `${c.name} (offline): ${c.comment}`;
+            li.style.opacity = "0.6";
+            list.appendChild(li);
+          });
+      };
+    };
+  }
+
+  useEffect(() => {
+    loadComments();
+  }, []);
+
+  // ✍️ Enviar comentario
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const name = e.target.name.value || "Anónimo";
+    const comment = e.target.comment.value.trim();
+    if (!comment) return;
+
+    const commentData = { fighterId: fighter.id, name, comment };
+
+    if (navigator.onLine) {
+      // Enviar directamente al servidor
+      await fetch("https://apispwa.onrender.com/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(commentData),
+      });
+      alert("💬 Comentario enviado!");
+    } else {
+      // Guardar en IndexedDB si está offline
+      const dbReq = indexedDB.open("database", 3);
+      dbReq.onsuccess = (event) => {
+        const db = event.target.result;
+        const tx = db.transaction("comments", "readwrite");
+        tx.objectStore("comments").add(commentData);
+        tx.oncomplete = () => {
+          alert("📦 Comentario guardado offline (se enviará luego)");
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.sync.register("sync-comments");
+          });
+        };
+      };
+    }
+
+    e.target.reset();
+    loadComments();
+  };
+
   return (
     <div className="fighter-wrapper">
+      <div className="fighter-container">
+        <Link to="/" className="back-link">
+          ⬅ Volver
+        </Link>
 
-  <div className="fighter-container">
-    <Link to="/" className="back-link">⬅ Volver</Link>
+        <h1 className="fighter-name">{fighter.name}</h1>
+        <img src={fighter.image} alt={fighter.name} className="fighter-img" />
+        <p className="bio">{fighter.bio}</p>
 
-    <h1 className="fighter-name">{fighter.name}</h1>
-    <img src={fighter.image} alt={fighter.name} className="fighter-img" />
+        <h3>🏆 Logros destacados:</h3>
+        <ul className="achievements">
+          {fighter.achievements.map((a, i) => (
+            <li key={i}>{a}</li>
+          ))}
+        </ul>
 
-    <p className="bio">{fighter.bio}</p>
+        <button className="subscribe-btn" onClick={subscribeToFighter}>
+          🔔 Suscribirme a {fighter.name}
+        </button>
 
-    <h3>🏆 Logros destacados:</h3>
-    <ul className="achievements">
-      {fighter.achievements.map((a, i) => (
-        <li key={i}>{a}</li>
-      ))}
-    </ul>
+        <button className="unsubscribe-btn" onClick={unsubscribe}>
+          🔕 Cancelar suscripción
+        </button>
 
-<button className="subscribe-btn" onClick={subscribeToFighter}>
-  🔔 Suscribirme a {fighter.name}
-</button>
+        <button className="fav-btn" onClick={saveFavorite}>
+          ⭐ Agregar a favoritos
+        </button>
 
-<button className="unsubscribe-btn" onClick={unsubscribe}>
-  🔕 Cancelar suscripción
-</button>
+        {/* 💬 Sección de comentarios */}
+        <h3>💬 Comentarios</h3>
 
-<button className="fav-btn" onClick={saveFavorite}>
-  ⭐ Agregar a favoritos
-</button>
+        <form onSubmit={handleSubmit}>
+          <input type="text" name="name" placeholder="Tu nombre" />
+          <textarea
+            name="comment"
+            placeholder="Escribe un comentario..."
+            required
+          />
+          <button type="submit">💭 Enviar comentario</button>
+        </form>
 
-  </div>
+        <ul id="comment-list" className="comments-list"></ul>
+      </div>
 
-  {/* Fondo */}
-  <div 
-    className="fighter-bg"
-    style={{ backgroundImage: `url(${fighter.image2})` }}
-  />
-
-</div>
-
+      {/* Fondo */}
+      <div
+        className="fighter-bg"
+        style={{ backgroundImage: `url(${fighter.image2})` }}
+      />
+    </div>
   );
 }

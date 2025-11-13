@@ -64,20 +64,62 @@ self.addEventListener("sync", (event) => {
   }
 });
 
+// ------------------ BACKGROUND SYNC: Comentarios ------------------
+self.addEventListener("sync", (event) => {
+  if (event.tag === "sync-comments") {
+    console.log("[SW] Sincronizando comentarios pendientes...");
+    event.waitUntil(syncOfflineComments());
+  }
+});
+
+async function syncOfflineComments() {
+  const db = await openDB();
+  const tx = db.transaction("comments", "readonly");
+  const store = tx.objectStore("comments");
+  const allComments = await store.getAll();
+
+  if (!allComments.length) {
+    console.log("[SW] No hay comentarios pendientes");
+    return;
+  }
+
+  try {
+    for (const c of allComments) {
+      await fetch("https://apispwa.onrender.com/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(c),
+      });
+      console.log("Comentario reenviado:", c);
+    }
+
+    const clearTx = db.transaction("comments", "readwrite");
+    clearTx.objectStore("comments").clear();
+    console.log("[SW] Comentarios sincronizados con éxito ✅");
+  } catch (err) {
+    console.error("[SW] Error al sincronizar comentarios:", err);
+  }
+}
+
+
 // ------------------ IndexedDB helpers ------------------
 function openDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open("database", 1);
+    const request = indexedDB.open("database", 3); // 👈 sube versión a 3
     request.onupgradeneeded = (event) => {
       let db = event.target.result;
-      if (!db.objectStoreNames.contains("table")) {
+      if (!db.objectStoreNames.contains("table"))
         db.createObjectStore("table", { autoIncrement: true });
-      }
+      if (!db.objectStoreNames.contains("favorites"))
+        db.createObjectStore("favorites", { keyPath: "id" });
+      if (!db.objectStoreNames.contains("comments"))
+        db.createObjectStore("comments", { autoIncrement: true }); // 👈 nuevo
     };
     request.onsuccess = (event) => resolve(event.target.result);
     request.onerror = (event) => reject(event.target.error);
   });
 }
+
 
 // ------------------ Reenvío de datos ------------------
 async function sendSavedPosts() {
