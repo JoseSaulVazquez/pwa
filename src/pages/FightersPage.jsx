@@ -71,13 +71,17 @@ export default function FighterPage() {
     const list = document.getElementById("comment-list");
     list.innerHTML = "";
 
-    // Online → Mongo
+    // Online → MongoDB
     if (navigator.onLine) {
       const res = await fetch(`https://apispwa.onrender.com/api/comments/${fighter.id}`);
       const data = await res.json();
       data.forEach((c) => {
         const li = document.createElement("li");
-        li.textContent = `${c.name}: ${c.comment}`;
+        li.className = "comment-item";
+        li.innerHTML = `
+          <div class="comment-author">${c.name}</div>
+          <div class="comment-text">${c.comment}</div>
+        `;
         list.appendChild(li);
       });
     }
@@ -94,8 +98,11 @@ export default function FighterPage() {
           .filter((c) => c.fighterId === fighter.id)
           .forEach((c) => {
             const li = document.createElement("li");
-            li.textContent = `${c.name} (offline): ${c.comment}`;
-            li.style.opacity = "0.6";
+            li.className = "comment-item comment-offline";
+            li.innerHTML = `
+              <div class="comment-author">${c.name}</div>
+              <div class="comment-text">${c.comment}</div>
+            `;
             list.appendChild(li);
           });
       };
@@ -162,14 +169,18 @@ export default function FighterPage() {
         <button className="subscribe-btn" onClick={subscribeToFighter}>🔔 Suscribirme</button>
         <button className="unsubscribe-btn" onClick={unsubscribe}>🔕 Cancelar suscripción</button>
         <button className="fav-btn" onClick={saveFavorite}>⭐ Agregar a favoritos</button>
+        
+        <div className="comments-section">
+          <h3>💬 Comentarios</h3>
 
-        <h3>💬 Comentarios</h3>
-        <form onSubmit={handleSubmit}>
-          <input type="text" name="name" placeholder="Tu nombre" />
-          <textarea name="comment" placeholder="Escribe un comentario..." required />
-          <button type="submit">💭 Enviar comentario</button>
-        </form>
-        <ul id="comment-list" className="comments-list"></ul>
+          <form onSubmit={handleSubmit} className="comment-form">
+            <input type="text" name="name" placeholder="Tu nombre" />
+            <textarea name="comment" placeholder="Escribe un comentario..." required />
+            <button type="submit">Enviar comentario</button>
+          </form>
+
+          <ul id="comment-list" className="comment-list"></ul>
+        </div>
       </div>
 
       <div className="fighter-bg" style={{ backgroundImage: `url(${fighter.image2})` }} />
