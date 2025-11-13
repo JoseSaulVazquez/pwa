@@ -9,40 +9,30 @@ export default function FighterPage() {
 
   if (!fighter) return <p style={{ color: "white" }}>Luchador no encontrado.</p>;
 
-  // ✅ Inicializar IndexedDB con stores necesarios
+  // ✅ Inicializar IndexedDB
   useEffect(() => {
-    const request = indexedDB.open("database", 3);
+    const request = indexedDB.open("database", 4);
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
-
-      if (!db.objectStoreNames.contains("favorites")) {
+      if (!db.objectStoreNames.contains("favorites"))
         db.createObjectStore("favorites", { keyPath: "id" });
-      }
-
-      if (!db.objectStoreNames.contains("comments")) {
+      if (!db.objectStoreNames.contains("comments"))
         db.createObjectStore("comments", { autoIncrement: true });
-      }
     };
   }, []);
 
-  // ⭐ Guardar en favoritos
+  // ⭐ Guardar favorito
   const saveFavorite = () => {
-    const request = indexedDB.open("database", 3);
-
+    const request = indexedDB.open("database", 4);
     request.onsuccess = (event) => {
       const db = event.target.result;
       const tx = db.transaction("favorites", "readwrite");
-      const store = tx.objectStore("favorites");
-
-      store.put({ id: fighter.id, name: fighter.name });
-
-      tx.oncomplete = () => {
-        alert(`⭐ ${fighter.name} agregado a favoritos`);
-      };
+      tx.objectStore("favorites").put({ id: fighter.id, name: fighter.name });
+      tx.oncomplete = () => alert(`⭐ ${fighter.name} agregado a favoritos`);
     };
   };
 
-  // 🔔 SUSCRIBIRSE A PUSH
+  // 🔔 SUSCRIPCIÓN PUSH
   const subscribeToFighter = async () => {
     const sw = await navigator.serviceWorker.ready;
     const subscription = await sw.pushManager.subscribe({
@@ -76,16 +66,14 @@ export default function FighterPage() {
     alert(`🔕 Cancelaste suscripción a ${fighter.name}`);
   };
 
-  // 💬 Cargar comentarios existentes (de Mongo y IndexedDB)
+  // 💬 Cargar comentarios
   async function loadComments() {
     const list = document.getElementById("comment-list");
     list.innerHTML = "";
 
-    // Mostrar los del servidor
+    // Online → Mongo
     if (navigator.onLine) {
-      const res = await fetch(
-        `https://apispwa.onrender.com/api/comments/${fighter.id}`
-      );
+      const res = await fetch(`https://apispwa.onrender.com/api/comments/${fighter.id}`);
       const data = await res.json();
       data.forEach((c) => {
         const li = document.createElement("li");
@@ -94,8 +82,8 @@ export default function FighterPage() {
       });
     }
 
-    // Mostrar los offline guardados
-    const dbReq = indexedDB.open("database", 3);
+    // Offline → IndexedDB
+    const dbReq = indexedDB.open("database", 4);
     dbReq.onsuccess = (event) => {
       const db = event.target.result;
       const tx = db.transaction("comments", "readonly");
@@ -128,7 +116,6 @@ export default function FighterPage() {
     const commentData = { fighterId: fighter.id, name, comment };
 
     if (navigator.onLine) {
-      // Enviar directamente al servidor
       await fetch("https://apispwa.onrender.com/api/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -136,8 +123,12 @@ export default function FighterPage() {
       });
       alert("💬 Comentario enviado!");
     } else {
-      // Guardar en IndexedDB si está offline
-      const dbReq = indexedDB.open("database", 3);
+      const dbReq = indexedDB.open("database", 4);
+      dbReq.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("comments"))
+          db.createObjectStore("comments", { autoIncrement: true });
+      };
       dbReq.onsuccess = (event) => {
         const db = event.target.result;
         const tx = db.transaction("comments", "readwrite");
@@ -158,54 +149,30 @@ export default function FighterPage() {
   return (
     <div className="fighter-wrapper">
       <div className="fighter-container">
-        <Link to="/" className="back-link">
-          ⬅ Volver
-        </Link>
-
+        <Link to="/" className="back-link">⬅ Volver</Link>
         <h1 className="fighter-name">{fighter.name}</h1>
         <img src={fighter.image} alt={fighter.name} className="fighter-img" />
         <p className="bio">{fighter.bio}</p>
 
         <h3>🏆 Logros destacados:</h3>
         <ul className="achievements">
-          {fighter.achievements.map((a, i) => (
-            <li key={i}>{a}</li>
-          ))}
+          {fighter.achievements.map((a, i) => <li key={i}>{a}</li>)}
         </ul>
 
-        <button className="subscribe-btn" onClick={subscribeToFighter}>
-          🔔 Suscribirme a {fighter.name}
-        </button>
+        <button className="subscribe-btn" onClick={subscribeToFighter}>🔔 Suscribirme</button>
+        <button className="unsubscribe-btn" onClick={unsubscribe}>🔕 Cancelar suscripción</button>
+        <button className="fav-btn" onClick={saveFavorite}>⭐ Agregar a favoritos</button>
 
-        <button className="unsubscribe-btn" onClick={unsubscribe}>
-          🔕 Cancelar suscripción
-        </button>
-
-        <button className="fav-btn" onClick={saveFavorite}>
-          ⭐ Agregar a favoritos
-        </button>
-
-        {/* 💬 Sección de comentarios */}
         <h3>💬 Comentarios</h3>
-
         <form onSubmit={handleSubmit}>
           <input type="text" name="name" placeholder="Tu nombre" />
-          <textarea
-            name="comment"
-            placeholder="Escribe un comentario..."
-            required
-          />
+          <textarea name="comment" placeholder="Escribe un comentario..." required />
           <button type="submit">💭 Enviar comentario</button>
         </form>
-
         <ul id="comment-list" className="comments-list"></ul>
       </div>
 
-      {/* Fondo */}
-      <div
-        className="fighter-bg"
-        style={{ backgroundImage: `url(${fighter.image2})` }}
-      />
+      <div className="fighter-bg" style={{ backgroundImage: `url(${fighter.image2})` }} />
     </div>
   );
 }
